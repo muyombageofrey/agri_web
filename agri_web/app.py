@@ -1,4 +1,4 @@
-# app.py
+# app.py - Final version for Render.com (Free Plan Ready)
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
@@ -17,7 +17,7 @@ db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
-# Models
+# ==================== MODELS ====================
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
@@ -35,20 +35,48 @@ class FarmLocation(db.Model):
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-# Weather Function (with fallback)
+# ==================== SAFE ONE-TIME DB INIT (NO SHELL NEEDED) ====================
+@app.route('/init-db-once')
+def init_db_once():
+    if os.path.exists('/data/agri.db') or os.path.exists('agri.db'):
+        return '''
+        <h2>Database already exists!</h2>
+        <p>Your AgriWeb is ready. <a href="/login">Click here to login</a></p>
+        <small>This link only works once.</small>
+        '''
+    
+    with app.app_context():
+        db.create_all()
+        demo = User(
+            username='DemoFarmer',
+            email='farmer@example.com',
+            password=generate_password_hash('password123')
+        )
+        db.session.add(demo)
+        db.session.commit()
+    
+    return '''
+    <h2>Database created successfully!</h2>
+    <p>Demo account ready:</p>
+    <ul>
+        <li><strong>Email:</strong> farmer@example.com</li>
+        <li><strong>Password:</strong> password123</li>
+    </ul>
+    <p><a href="/login"><strong>Click here to login</strong></a></p>
+    <small>This link will stop working after first use.</small>
+    '''
+
+# ==================== WEATHER FUNCTION ====================
 def get_weather_data(lat, lon):
     try:
         point = Point(lat, lon)
         end = date.today()
         start = end - timedelta(days=10)
         data = Daily(point, start, end).fetch()
-
         if data.empty:
             raise Exception("No weather data")
-
         current = data.iloc[-1]
         history = data.iloc[-6:-1][::-1].copy()
-
         history_list = []
         for i, (_, row) in enumerate(history.iterrows()):
             day = end - timedelta(days=5-i)
@@ -60,7 +88,6 @@ def get_weather_data(lat, lon):
                 'tmax': round(row['tmax'] or 32.0, 1),
                 'rainfall': round(row['prcp'] or 0.0, 1)
             })
-
         return {
             'current': {
                 'tavg': round(current['tavg'] or 27.5, 1),
@@ -89,6 +116,7 @@ def get_weather_data(lat, lon):
             ]
         }
 
+# ==================== ROUTES ====================
 @app.route('/')
 def index():
     return redirect(url_for('login'))
@@ -99,14 +127,12 @@ def dashboard():
     farm = FarmLocation.query.filter_by(user_id=current_user.id).first()
     if not farm:
         return redirect(url_for('set_location'))
-
     weather_data = get_weather_data(farm.latitude, farm.longitude)
     news = [
         {"title": "National Agricultural Research Organisation (NARO)", "summary": "Provides news and updates on research, innovation, and technologies in agriculture", "link": "https://news.naro.go.ug/", "published": "2025"},
         {"title": "Daily Monitor (UG) Farming Section", "summary": "Provide daily updates on farming and agribusiness ventures, news, market info, and practical advice.", "link": "https://www.monitor.co.ug/uganda/magazines/farming", "published": "2025"},
         {"title": "Food and Agriculture Organization (FAO) Uganda", "summary": "Provides news on large-scale projects, food security, and climate adaptation initiatives", "link": "https://www.fao.org/uganda/news/en ", "published": "2025"}
     ]
-
     return render_template('dashboard.html',
                            weather=weather_data['current'],
                            history=weather_data['history'],
@@ -182,28 +208,5 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
-@app.route('/init-db', methods=['GET'])
-def init_db():
-    with app.app_context():
-        db.create_all()
-        if not User.query.filter_by(email='farmer@example.com').first():
-            demo = User(username='DemoFarmer', email='farmer@example.com',
-                        password=generate_password_hash('password123'))
-            db.session.add(demo)
-            db.session.commit()
-        return "Database initialized! Demo user created. You can delete this route now."
-
+# ==================== RUN APP ====================
 if __name__ == '__main__':
-  
-    with app.app_context():
-        db.create_all()
-        if not User.query.filter_by(email='farmer@example.com').first():
-            demo = User(
-                username='DemoFarmer',
-                email='farmer@example.com',
-                password=generate_password_hash('password123')
-            )
-            db.session.add(demo)
-            db.session.commit()
-
-   
