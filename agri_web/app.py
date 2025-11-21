@@ -182,6 +182,17 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
+@app.route('/init-db', methods=['GET'])
+def init_db():
+    with app.app_context():
+        db.create_all()
+        if not User.query.filter_by(email='farmer@example.com').first():
+            demo = User(username='DemoFarmer', email='farmer@example.com',
+                        password=generate_password_hash('password123'))
+            db.session.add(demo)
+            db.session.commit()
+        return "Database initialized! Demo user created. You can delete this route now."
+
 if __name__ == '__main__':
   
     with app.app_context():
@@ -194,4 +205,5 @@ if __name__ == '__main__':
             )
             db.session.add(demo)
             db.session.commit()
+
    
