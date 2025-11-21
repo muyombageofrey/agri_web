@@ -1,4 +1,4 @@
-# app.py - Final version for Render.com (Free Plan Ready)
+# app.py
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
@@ -17,6 +17,7 @@ db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
+
 # ==================== MODELS ====================
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -31,19 +32,18 @@ class FarmLocation(db.Model):
     latitude = db.Column(db.Float, nullable=False)
     longitude = db.Column(db.Float, nullable=False)
 
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-# ==================== SAFE ONE-TIME DB INIT (NO SHELL NEEDED) ====================
+
+# ==================== ONE-TIME DB INITIALIZE ====================
 @app.route('/init-db-once')
 def init_db_once():
-    if os.path.exists('/data/agri.db') or os.path.exists('agri.db'):
-        return '''
-        <h2>Database already exists!</h2>
-        <p>Your AgriWeb is ready. <a href="/login">Click here to login</a></p>
-        <small>This link only works once.</small>
-        '''
+    db_path = '/data/agri.db' if os.path.exists('/data') else 'agri.db'
+    if os.path.exists(db_path):
+        return '<h2>Database already created!</h2><p><a href="/login">Go to Login</a></p>'
     
     with app.app_context():
         db.create_all()
@@ -56,15 +56,15 @@ def init_db_once():
         db.session.commit()
     
     return '''
-    <h2>Database created successfully!</h2>
-    <p>Demo account ready:</p>
+    <h2>AgriWeb is ready!</h2>
+    <p>Demo account created:</p>
     <ul>
         <li><strong>Email:</strong> farmer@example.com</li>
         <li><strong>Password:</strong> password123</li>
     </ul>
-    <p><a href="/login"><strong>Click here to login</strong></a></p>
-    <small>This link will stop working after first use.</small>
+    <p><a href="/login"><strong>Click here to login →</strong></a></p>
     '''
+
 
 # ==================== WEATHER FUNCTION ====================
 def get_weather_data(lat, lon):
@@ -74,7 +74,8 @@ def get_weather_data(lat, lon):
         start = end - timedelta(days=10)
         data = Daily(point, start, end).fetch()
         if data.empty:
-            raise Exception("No weather data")
+            raise Exception("No data")
+        
         current = data.iloc[-1]
         history = data.iloc[-6:-1][::-1].copy()
         history_list = []
@@ -88,6 +89,7 @@ def get_weather_data(lat, lon):
                 'tmax': round(row['tmax'] or 32.0, 1),
                 'rainfall': round(row['prcp'] or 0.0, 1)
             })
+        
         return {
             'current': {
                 'tavg': round(current['tavg'] or 27.5, 1),
@@ -99,8 +101,7 @@ def get_weather_data(lat, lon):
             },
             'history': history_list
         }
-    except Exception as e:
-        print("Weather fallback used:", e)
+    except Exception:
         today = date.today()
         return {
             'current': {
@@ -116,6 +117,7 @@ def get_weather_data(lat, lon):
             ]
         }
 
+
 # ==================== ROUTES ====================
 @app.route('/')
 def index():
@@ -127,11 +129,12 @@ def dashboard():
     farm = FarmLocation.query.filter_by(user_id=current_user.id).first()
     if not farm:
         return redirect(url_for('set_location'))
+    
     weather_data = get_weather_data(farm.latitude, farm.longitude)
     news = [
-        {"title": "National Agricultural Research Organisation (NARO)", "summary": "Provides news and updates on research, innovation, and technologies in agriculture", "link": "https://news.naro.go.ug/", "published": "2025"},
-        {"title": "Daily Monitor (UG) Farming Section", "summary": "Provide daily updates on farming and agribusiness ventures, news, market info, and practical advice.", "link": "https://www.monitor.co.ug/uganda/magazines/farming", "published": "2025"},
-        {"title": "Food and Agriculture Organization (FAO) Uganda", "summary": "Provides news on large-scale projects, food security, and climate adaptation initiatives", "link": "https://www.fao.org/uganda/news/en ", "published": "2025"}
+        {"title": "NARO Uganda", "summary": "Agricultural research updates", "link": "https://news.naro.go.ug/", "published": "2025"},
+        {"title": "Daily Monitor Farming", "summary": "Latest farming news & advice", "link": "https://www.monitor.co.ug/uganda/magazines/farming", "published": "2025"},
+        {"title": "FAO Uganda", "summary": "Food security & climate projects", "link": "https://www.fao.org/uganda/news/en", "published": "2025"}
     ]
     return render_template('dashboard.html',
                            weather=weather_data['current'],
@@ -171,7 +174,7 @@ def set_location():
                 location = FarmLocation(user_id=current_user.id, latitude=lat, longitude=lon, name=name)
                 db.session.add(location)
             db.session.commit()
-            flash('Farm location saved successfully!', 'success')
+            flash('Farm location saved!', 'success')
             return redirect(url_for('dashboard'))
         except:
             flash('Invalid coordinates', 'danger')
@@ -193,9 +196,11 @@ def register():
         if User.query.filter_by(email=request.form['email']).first():
             flash('Email already registered', 'danger')
         else:
-            user = User(username=request.form['username'],
-                        email=request.form['email'],
-                        password=generate_password_hash(request.form['password']))
+            user = User(
+                username=request.form['username'],
+                email=request.form['email'],
+                password=generate_password_hash(request.form['password'])
+            )
             db.session.add(user)
             db.session.commit()
             flash('Registered! Please login.', 'success')
@@ -208,5 +213,7 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
-# ==================== RUN APP ====================
+
+# ==================== RUN ONLY LOCALLY ====================
 if __name__ == '__main__':
+    app.run(debug=True)
