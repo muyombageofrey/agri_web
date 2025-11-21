@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}Set Farm Location{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card" style="max-width: 600px;">
+        <h2>Set Your Farm Location</h2>
+        <p>Select your district – we auto-fill accurate coordinates</p>
+
+        <form method="POST" id="locationForm">
+            <div class="input-group">
+                <label>Country</label>
+                <select name="country" id="country" required onchange="updateDistricts()">
+                    <option value="Uganda" selected>Uganda</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label>District</label>
+                <select name="district" id="district" required onchange="setCoordinates()">
+                    <option value="">Select district...</option>
+                </select>
+            </div>
+
+            <div style="margin:20px 0; padding:15px; background:#f0f8f0; border-radius:8px;">
+                <p><strong>Coordinates:</strong></p>
+                <p>Latitude: <span id="lat">1.517</span>° | Longitude: <span id="lon">33.467</span>°</p>
+                <input type="hidden" name="lat" id="lat_input" value="1.517">
+                <input type="hidden" name="lon" id="lon_input" value="33.467">
+            </div>
+
+            <div class="input-group">
+                <input type="text" name="name" placeholder="Farm Name (e.g. Green Valley)" value="{{ location.name if location else '' }}">
+            </div>
+
+            <button type="submit" class="btn-primary">Save Location & Start</button>
+        </form>
+    </div>
+</div>
+
+<script>
+const districts = {
+    "Uganda": {
+        "Kampala": [0.347, 32.583], "Wakiso": [0.408, 32.476], "Mukono": [0.368, 32.750],
+        "Mpigi": [0.225, 32.233], "Mubende": [0.600, 31.267],  "Luweero": [0.800, 32.483],
+        "Nakaseke": [1.000, 32.300], "Nakasongola": [1.717, 32.317], "Sembabule": [0.183, 31.667],
+        "Gomba": [-0.333, 31.567], "Butambala": [0.117, 32.100], "Kalungu": [-0.233, 31.733],
+        "Kalangala": [-0.417, 32.500],    "Masaka": [-0.333, 31.117],      "Rakai": [-0.667, 31.033],
+        "Lira": [2.250, 32.900],       "Apac": [2.083, 32.917],       "Oyam": [2.217, 32.483],
+        "Kole": [2.083, 32.917],        "Alebtong": [2.150, 33.150],        "Dokolo": [1.967, 33.633],
+        "Otuke": [1.950, 33.617],        "Serere": [1.517, 33.467],        "Soroti": [1.717, 33.617],
+        "Kumi": [1.400, 33.917],        "Ngora": [1.467, 34.000],        "Amuria": [2.083, 33.917],
+        "Katakwi": [1.917, 34.000],        "Bukedea": [1.567, 34.000],        "Pallisa": [1.150, 33.783],
+        "Budaka": [1.517, 33.917],        "Bududa": [1.000, 34.333],        "Manafwa": [0.917, 34.267],
+        "Sironko": [1.267, 34.283],        "Mbale": [1.067, 34.177],        "Tororo": [0.683, 34.183],
+        "Busia": [0.467, 34.100],        "Bugiri": [0.567, 33.750],        "Iganga": [0.617, 33.283],
+        "Kamuli": [0.917, 33.150],        "Buyende": [0.767, 33.183],        "Luuka": [0.767, 33.317],
+        "Jinja": [0.450, 33.200],        "Mayuge": [0.467, 33.467],        "Namutumba": [0.717, 33.667],
+        "Kaliro": [1.017, 33.283],        "Gulu": [2.783, 32.300],        "Amuru": [3.000, 32.367],
+        "Nwoya": [2.567, 32.000],        "Kitgum": [3.283, 33.000],        "Lamwo": [3.067, 33.000],
+        "Agago": [3.067, 33.367],        "Pader": [2.917, 33.167],        "Omoro": [2.567, 32.917],
+        "Arua": [3.050, 30.917],        "Nebbi": [2.483, 31.083],        "Pakwach": [2.467, 31.367],
+        "Zombo": [2.517, 30.917],        "Yumbe": [3.467, 31.250],        "Moyo": [3.383, 31.800],
+        "Obongi": [3.167, 31.617],        "Adjumani": [3.367, 31.783],        "Maracha": [3.283, 30.983],
+        "Koboko": [3.417, 30.917],        "Terego": [3.233, 30.917],        "Masindi": [1.683, 31.667],
+        "Kiryandongo": [2.017, 32.583],        "Buliisa": [2.233, 31.317],        "Kiryandongo": [2.017, 32.583],
+        "Hoima": [1.433, 31.417],        "Kikuube": [1.317, 31.150],        "Kagadi": [0.633, 30.817],
+        "Kakumiro": [0.517, 30.750],        "Kyenjojo": [0.633, 30.867],        "Kyegegwa": [0.517, 30.633],
+        "Kamwenge": [0.167, 30.450],        "Kyenjojo": [0.633, 30.867],        "Mbarara": [-0.607, 30.654],
+        "Ibanda": [-0.133, 30.800],        "Buhweju": [-0.717, 30.133],        "Isingiro": [-0.817, 30.917],
+        "Kiruhura": [-0.167, 30.967],        "Ntungamo": [-0.867, 30.617],        "Rubirizi": [-0.367, 30.117],  
+      "Sheema": [-0.767, 30.467],        "Bushenyi": [-0.533, 30.200],        "Mitooma": [-0.667, 30.000],
+        "Rubanda": [-1.033, 29.917],        "Rukiga": [-1.000, 29.867],        "Rukungiri": [-0.833, 29.967],
+        "Kabale": [-1.250, 29.983],        "Kisoro": [-1.217, 29.683],        "Rubanda": [-1.033, 29.917],
+        "Kotido": [3.017, 34.100],        "Kaabong": [3.517, 34.067],        "Moroto": [2.517, 34.667],
+        "Napak": [2.417, 34.067],        "Amudat": [2.000, 34.917],        "Nakapiripirit": [2.117, 34.167],
+        "Abim": [3.117, 34.000],        "Nwoya": [2.567, 32.000]
+    }
+};
+
+function updateDistricts() {
+    const select = document.getElementById("district");
+    select.innerHTML = '<option value="">Select district...</option>';
+    Object.keys(districts["Uganda"]).sort().forEach(d => {
+        let opt = new Option(d, d);
+        select.add(opt);
+    });
+    setCoordinates();
+}
+
+function setCoordinates() {
+    const district = document.getElementById("district").value;
+    if (districts["Uganda"][district]) {
+        const [lat, lon] = districts["Uganda"][district];
+        document.getElementById("lat").textContent = lat.toFixed(3);
+        document.getElementById("lon").textContent = lon.toFixed(3);
+        document.getElementById("lat_input").value = lat;
+        document.getElementById("lon_input").value = lon;
+    }
+}
+
+window.onload = updateDistricts;
+</script>
+{% endblock %}
+
+    
+    

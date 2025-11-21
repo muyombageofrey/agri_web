@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - {{ current_user.username }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+
+    <div class="welcome-banner p-4 rounded-4 shadow text-white mb-5" style="background: linear-gradient(135deg, #2e7d32, #4caf50);">
+        <h1 class="display-5 fw-bold">Welcome back, {{ current_user.username }}!</h1>
+        <p class="lead mb-0">
+            {{ farm.name }} • {{ farm.latitude|round(3) }}, {{ farm.longitude|round(3) }} • {{ now.strftime('%A, %B %d, %Y') }}
+        </p>
+    </div>
+
+    <!-- Current Weather -->
+    <div class="card border-0 shadow-lg mb-5" style="background: linear-gradient(135deg, #e8f5e8, #c8e6c9);">
+        <div class="card-body text-center py-5">
+            <h2 class="fw-bold text-success mb-4">Current Weather</h2>
+            <div class="display-1 fw-bold text-dark">{{ weather.tavg }}°C</div>
+            <h3 class="text-success mt-3">{{ weather.condition }}</h3>
+            <div class="row mt-5 text-center">
+                <div class="col-6 col-md-3"><small class="text-muted">Min</small><br><strong class="fs-4">{{ weather.tmin }}°C</strong></div>
+                <div class="col-6 col-md-3"><small class="text-muted">Max</small><br><strong class="fs-4">{{ weather.tmax }}°C</strong></div>
+                <div class="col-6 col-md-3"><small class="text-muted">Rain</small><br><strong class="fs-4 text-primary">{{ weather.rainfall }} mm</strong></div>
+                <div class="col-6 col-md-3"><small class="text-muted">Humidity</small><br><strong class="fs-4">{{ weather.humidity }}%</strong></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Past 5 Days -->
+    <h4 class="mb-4 text-success">Past 5 Days Weather</h4>
+    <div class="row g-3 mb-5">
+        {% for day in history %}
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="card text-center h-100 border-0 shadow-sm hover-shadow">
+                <div class="card-body py-4">
+                    <small class="text-muted">{{ day.day_name }}</small>
+                    <strong class="d-block fs-5">{{ day.date }}</strong>
+                    <div class="fs-3 fw-bold text-success mt-2">{{ day.tavg }}°</div>
+                    <small>{{ day.tmin }}–{{ day.tmax }}°C</small><br>
+                    <small class="text-{{ 'danger' if day.rainfall > 5 else 'secondary' }}">{{ day.rainfall }} mm</small>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- News -->
+    <div class="mt-5">
+        <h3 class="text-success mb-4">Latest Agri News</h3>
+        <div class="row g-4">
+            {% for article in news %}
+            <div class="col-md-4">
+                <div class="card h-100 shadow-sm border-0">
+                    <div class="card-body">
+                        <h6 class="card-title text-success fw-bold">
+                            <a href="{{ article.link }}" target="_blank" class="text-decoration-none">{{ article.title }}</a>
+                        </h6>
+                        <p class="text-muted small">{{ article.summary }}</p>
+                        <small class="text-muted">{{ article.published }}</small>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Team -->
+    <div class="mt-5">
+        <h2 class="text-center text-success mb-5 fw-bold">Meet Our Team</h2>
+        <div class="row g-4 justify-content-center">
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow hover-shadow team-card">
+                    <div class="card-body p-4">
+                        <i class="fas fa-user-circle fa-5x text-success mb-3"></i>
+                        <h5>Muyomba Jeff</h5>
+                        <a href="https://wa.me/256750005068" target="_blank" class="btn btn-success btn-sm rounded-pill px-4">
+                            Chat
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow hover-shadow team-card">
+                    <div class="card-body p-4">
+                        <i class="fas fa-user-circle fa-5x text-success mb-3"></i>
+                        <h5>Leni Collins</h5>
+                        <a href="https://wa.me/256778987245" target="_blank" class="btn btn-success btn-sm rounded-pill px-4">
+                            Chat
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow hover-shadow team-card">
+                    <div class="card-body p-4">
+                        <i class="fas fa-user-circle fa-5x text-success mb-3"></i>
+                        <h5>Mugisa Bob</h5>
+                        <a href https://wa.me/256706579662" target="_blank" class="btn btn-success btn-sm rounded-pill px-4">
+                            Chat
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow hover-shadow team-card">
+                    <div class="card-body p-4">
+                        <i class="fas fa-user-circle fa-5x text-success mb-3"></i>
+                        <h5>Atibuni Caesar</h5>
+                        <a href="https://wa.me/256742405126" target="_blank" class="btn btn-success btn-sm rounded-pill px-4">
+                            Chat
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .hover-shadow { transition: all 0.3s ease; }
+    .hover-shadow:hover { transform: translateY(-10px); box-shadow: 0 15px 35px rgba(46,125,50,0.2)!important; }
+    .team-card { border-radius: 20px; }
+</style>
+{% endblock %}
